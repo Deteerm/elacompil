@@ -17,7 +17,6 @@
         :SmartDeviceDetails="SmartDeviceDetails"
       />
       <h1>todo: ENDPOINT WebSocket</h1>
-      <h1>todo: PopUpWindow styling and data</h1>
       <h1>todo: PopUpWindow dragging</h1>
     </div>
   </main>
