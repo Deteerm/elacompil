@@ -57,8 +57,6 @@ export default {
       this.getDeviceDetails(device)
     },
     getDevices() {
-      const rand = this.randomDeviceConnectionState
-
       fetch('/api/v1/devices').then(_ => {
         this.SmartDevices = [
           {
@@ -112,8 +110,8 @@ export default {
             name: 'Another Termometer',
           }
         ]
-        this.SmartDevices.forEach(function (device) {
-          device.connectionState = rand()
+        this.SmartDevices.forEach(device => {
+          device.connectionState = this.randomDeviceConnectionState();
         })
       })
     },
@@ -182,7 +180,7 @@ export default {
     io.on('refresh', this.refresh)
 
     //Mock incoming MessageEvents from the server
-    window.setInterval(() => {
+    setInterval(() => {
       io.socketClient.emit('refresh')
     }, 15000)
 
