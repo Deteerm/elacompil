@@ -15,9 +15,11 @@
         v-if="detailsActive"
         :iconSrc="iconSrc"
         :SmartDeviceDetails="SmartDeviceDetails"
+        :position="position"
+        @close="detailsActive = false"
+        class="smart-device-details"
       />
       <h1>todo: ENDPOINT WebSocket</h1>
-      <h1>todo: PopUpWindow dragging</h1>
     </div>
   </main>
 </template>
@@ -25,6 +27,7 @@
 <script>
 import SmartDevice from './components/SmartDevice.vue';
 import SmartDeviceDetails from './components/SmartDeviceDetails.vue'
+import interact from 'interactjs'
 
 export default {
   components: {
@@ -36,7 +39,11 @@ export default {
       SmartDevices: [],
       SmartDeviceDetails: {},
       detailsActive: false,
-      iconSrc: ''
+      iconSrc: '',
+      position: {
+        x: 0,
+        y: 0
+      }
     }
   },
   methods: {
@@ -156,6 +163,19 @@ export default {
           connectionState: 'disconnected'
         }
       ]
+    })
+    const position = this.position;
+
+    interact('.smart-device-details').draggable({
+      listeners: {
+        move(event) {
+          position.x += event.dx
+          position.y += event.dy
+
+          event.target.style.transform =
+            `translate(${position.x}px, ${position.y}px)`
+        },
+      }
     })
   }
 }

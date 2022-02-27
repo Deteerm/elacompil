@@ -1,6 +1,6 @@
 <template>
   <div class="smart-device-details-root">
-    <div class="exit-icon">&#10006</div>
+    <div @click="$emit('close')" class="exit-icon">&#10006</div>
     <div class="device-label">
       <img class="icon" :src="iconSrc" alt />
       <div class="device-name font-bold">{{ this.SmartDeviceDetails.name }}</div>
@@ -22,7 +22,8 @@
 export default {
   props: {
     SmartDeviceDetails: Object,
-    iconSrc: String
+    iconSrc: String,
+    position: Object
   },
   computed: {
     DetailsWithoutTheName() {
@@ -43,6 +44,9 @@ export default {
         .replace(/^./, (match) => match.toUpperCase())
         .trim();
     }
+  },
+  mounted() {
+    this.$el.style.transform = `translate(${this.position.x}px, ${this.position.y}px)`
   }
 }
 </script>
@@ -50,8 +54,6 @@ export default {
 <style scoped>
 .smart-device-details-root {
   position: absolute;
-  bottom: -300px;
-  left: 0;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -60,6 +62,8 @@ export default {
   box-shadow: 0 0 10px;
   border-radius: 5px;
   padding: 5px 5px 10px 5px;
+  background-color: rgba(255, 255, 255, 0.95);
+  z-index: 100;
 }
 
 .device-label {
