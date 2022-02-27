@@ -6,43 +6,41 @@
       <div class="device-name font-bold">{{ this.SmartDeviceDetails.name }}</div>
     </div>
     <div class="common-details">
-      <div v-for="key in DetailsWithoutTheName" class="details-row">
+      <div v-for="key in DetailsWithoutTheName()" class="details-row">
         <span class="font-bold details-key">{{ camelCaseToSentence(key) }}:</span>
         <span
           v-if="key === 'temperature'"
           class="details-data"
         >{{ this.SmartDeviceDetails[key] }}&degC</span>
-        <span v-else class="details-data">{{ this.SmartDeviceDetails[key] }}</span>
+        <span
+          v-else
+          class="details-data"
+        >{{ this.camelToSentenceInLowerCase(this.SmartDeviceDetails[key]) }}</span>
       </div>
     </div>
   </div>
 </template>
 
 <script>
+import camelCaseToSentence from "../lib/camelCaseToSentence";
+
 export default {
   props: {
     SmartDeviceDetails: Object,
     iconSrc: String,
     position: Object
   },
-  computed: {
+  methods: {
+    camelCaseToSentence,
+    camelToSentenceInLowerCase(input) {
+      const data = this.camelCaseToSentence(input)
+      if (typeof data == 'string') {
+        return data.toLocaleLowerCase()
+      }
+      return data
+    },
     DetailsWithoutTheName() {
       return Object.getOwnPropertyNames(this.SmartDeviceDetails).filter(key => key != 'name')
-    }
-  },
-  methods: {
-    camelCaseToSentence(input) {
-      if (typeof input !== 'string') {
-        return input
-      }
-
-      if (input === 'isTurnedOn') {
-        return 'Turned On'
-      }
-
-      return input.replace(/([A-Z])/g, (match) => ` ${match}`)
-        .replace(/^./, (match) => match.toUpperCase())
-        .trim();
     }
   },
   mounted() {
@@ -53,7 +51,8 @@ export default {
 
 <style scoped>
 .smart-device-details-root {
-  position: absolute;
+  position: fixed;
+  top: 15%;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -64,6 +63,7 @@ export default {
   padding: 5px 5px 10px 5px;
   background-color: rgba(255, 255, 255, 0.95);
   z-index: 100;
+  touch-action: none;
 }
 
 .device-label {

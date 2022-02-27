@@ -19,7 +19,6 @@
         @close="detailsActive = false"
         class="smart-device-details"
       />
-      <h1>todo: ENDPOINT WebSocket</h1>
     </div>
   </main>
 </template>
@@ -28,6 +27,7 @@
 import SmartDevice from './components/SmartDevice.vue';
 import SmartDeviceDetails from './components/SmartDeviceDetails.vue'
 import interact from 'interactjs'
+import SocketMock from 'socket.io-mock'
 
 export default {
   components: {
@@ -39,10 +39,11 @@ export default {
       SmartDevices: [],
       SmartDeviceDetails: {},
       detailsActive: false,
+      activeDevice: null,
       iconSrc: '',
       position: {
         x: 0,
-        y: 0
+        y: 0,
       }
     }
   },
@@ -51,11 +52,75 @@ export default {
       const device = payload
 
       this.detailsActive = true
+      this.activeDevice = device
       this.iconSrc = payload.iconSrc
-      this.SmartDeviceDetails =
+      this.getDeviceDetails(device)
+    },
+    getDevices() {
+      const rand = this.randomDeviceConnectionState
 
-        //Mocking request to backend
-        await fetch(`/api/v1/devices/${device.id}`).then(function (_) {
+      fetch('/api/v1/devices').then(_ => {
+        this.SmartDevices = [
+          {
+            type: 'bulb',
+            id: 'aaa',
+            name: 'Bright Ball',
+          },
+          {
+            type: 'bulb',
+            id: 'aab',
+            name: 'Bright Ball Two',
+          },
+          {
+            type: 'outlet',
+            id: 'abb',
+            name: 'Smart Socket',
+          },
+          {
+            type: 'temperatureSensor',
+            id: 'bbb',
+            name: 'Old Termometer',
+          },
+          {
+            type: 'bulb',
+            id: 'bbc',
+            name: 'Bright Ball Three',
+          },
+          {
+            type: 'temperatureSensor',
+            id: 'bcc',
+            name: 'New Termometer',
+          },
+          {
+            type: 'bulb',
+            id: 'ccc',
+            name: 'Bright Ball Four',
+          },
+          {
+            type: 'outlet',
+            id: 'ccd',
+            name: 'Smart Socket Two',
+          },
+          {
+            type: 'outlet',
+            id: 'cdd',
+            name: 'Smart Socket Three',
+          },
+          {
+            type: 'temperatureSensor',
+            id: 'ddd',
+            name: 'Another Termometer',
+          }
+        ]
+        this.SmartDevices.forEach(function (device) {
+          device.connectionState = rand()
+        })
+      })
+    },
+    async getDeviceDetails(device) {
+      this.SmartDeviceDetails = await fetch(`/api/v1/devices/${device.id}`)
+        //Mocking response from backend
+        .then(function (_) {
           if (device.type === 'bulb') {
             return {
               //SmartBulb
@@ -96,77 +161,38 @@ export default {
         }).catch(e => {
           alert("Error: " + e.message)
         })
+    },
+    refresh() {
+      this.getDevices()
+      if (this.activeDevice) this.getDeviceDetails(this.activeDevice)
+    },
+    randomDeviceConnectionState() {
+      return ['disconnected', 'poorConnection', 'connected'][Math.floor(Math.random() * 3)]
+    }
+  },
+  computed: {
+    restrictToWindow() {
+      return interact.modifiers.restrictRect({
+        restriction: { width: window.innerWidth, height: window.innerHeight }
+      })
     }
   },
   created() {
-    //mock data
-    fetch('/api/v1/devices').then(_ => {
-      this.SmartDevices = [
-        {
-          type: 'bulb',
-          id: 'aaa',
-          name: 'Bright Ball',
-          connectionState: 'connected'
-        },
-        {
-          type: 'bulb',
-          id: 'aab',
-          name: 'Bright Ball Two',
-          connectionState: 'poorConnection'
-        },
-        {
-          type: 'outlet',
-          id: 'abb',
-          name: 'Smart Socket',
-          connectionState: 'connected'
-        },
-        {
-          type: 'temperatureSensor',
-          id: 'bbb',
-          name: 'Old Termometer',
-          connectionState: 'disconnected'
-        },
-        {
-          type: 'bulb',
-          id: 'bbc',
-          name: 'Bright Ball Three',
-          connectionState: 'connected'
-        },
-        {
-          type: 'temperatureSensor',
-          id: 'bcc',
-          name: 'New Termometer',
-          connectionState: 'connected'
-        },
-        {
-          type: 'bulb',
-          id: 'ccc',
-          name: 'Bright Ball Four',
-          connectionState: 'connected'
-        },
-        {
-          type: 'outlet',
-          id: 'ccd',
-          name: 'Smart Socket Two',
-          connectionState: 'poorConnection'
-        },
-        {
-          type: 'outlet',
-          id: 'cdd',
-          name: 'Smart Socket Three',
-          connectionState: 'connected'
-        },
-        {
-          type: 'temperatureSensor',
-          id: 'ddd',
-          name: 'Another Termometer',
-          connectionState: 'disconnected'
-        }
-      ]
-    })
+    const io = new SocketMock() //io.('/api/v1/refresh')
+    io.on('refresh', this.refresh)
+
+    //Mock incoming MessageEvents from the server
+    window.setInterval(() => {
+      io.socketClient.emit('refresh')
+    }, 15000)
+
+    //mock request for data
+    this.getDevices()
+
     const position = this.position;
 
     interact('.smart-device-details').draggable({
+      modifiers: [this.restrictToWindow],
       listeners: {
         move(event) {
           position.x += event.dx

@@ -4,11 +4,13 @@
       <img :src="icon" alt />
     </div>
     <div class="device-name">{{ this.name }}</div>
-    <div class="device-state">{{ this.connectionState }}</div>
+    <div :class="[connectionState]">{{ camelCaseToSentence(this.connectionState) }}</div>
   </div>
 </template>
 
 <script>
+import camelCaseToSentence from "../lib/camelCaseToSentence";
+
 export default {
   props: {
     type: String, // 'bulb', 'outlet' or 'temperatureSensor';
@@ -24,7 +26,8 @@ export default {
   methods: {
     openDetials(e) {
       this.$emit("openDetials", { id: this.id, type: this.type, name: this.name, connectionState: this.connectionState, iconSrc: this.icon })
-    }
+    },
+    camelCaseToSentence
   }
 }
 </script>
@@ -51,7 +54,15 @@ export default {
   font-size: 1.2em;
 }
 
-.device-state {
+.connected {
   color: green;
+}
+
+.poorConnection {
+  color: #eba801;
+}
+
+.disconnected {
+  color: red;
 }
 </style>
