@@ -34,7 +34,7 @@ export default {
     camelCaseToSentence,
     camelToSentenceInLowerCase(input) {
       const data = this.camelCaseToSentence(input)
-      if (typeof data == 'string') {
+      if (typeof data === 'string') {
         return data.toLocaleLowerCase()
       }
       return data
