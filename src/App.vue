@@ -98,10 +98,20 @@ export default {
       window.removeEventListener('load', this.defineInteractable)
     },
     recalculateRestict() {
-      console.log('aa')
       this.interactable.draggable({
         modifiers: [this.restrictToWindow()]
       })
+
+      const details = document.querySelector('.smart-device-details')
+      const rect = details.getBoundingClientRect()
+
+      if (rect.right > window.innerWidth || rect.left > window.innerHeight) {
+        this.position.x = 0
+        this.position.y = 0
+        details.style.transform =
+          `translate(${this.position.x}px, ${this.position.y}px)`
+      }
+
     },
     debounce(func, timeout = 300) {
       let timer;
