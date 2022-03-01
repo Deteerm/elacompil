@@ -8,14 +8,12 @@
     <div class="common-details">
       <div v-for="key in DetailsWithoutTheName()" class="details-row">
         <span class="font-bold details-key">{{ camelCaseToSentence(key) }}:</span>
-        <span
-          v-if="key === 'temperature'"
-          class="details-data"
-        >{{ this.SmartDeviceDetails[key] }}&degC</span>
-        <span
-          v-else
-          class="details-data"
-        >{{ this.camelToSentenceInLowerCase(this.SmartDeviceDetails[key]) }}</span>
+        <span class="details-data">
+          {{ this.camelToSentenceInLowerCase(this.SmartDeviceDetails[key]) }}
+          <i
+            v-html="this.suffix(key)"
+          ></i>
+        </span>
       </div>
     </div>
   </div>
@@ -41,6 +39,21 @@ export default {
     },
     DetailsWithoutTheName() {
       return Object.getOwnPropertyNames(this.SmartDeviceDetails).filter(key => key != 'name')
+    },
+    suffix(key) {
+      if (key === 'temperature') {
+        return '&#8451;'
+      }
+
+      if (key === 'powerConsumption') {
+        return 'W'
+      }
+
+      if (key === 'brightness') {
+        return '/ 100'
+      }
+
+      return ''
     }
   },
   mounted() {
@@ -51,8 +64,9 @@ export default {
 
 <style scoped>
 .smart-device-details-root {
-  position: fixed;
-  top: 15%;
+  position: absolute;
+  top: 0;
+  left: 0;
   display: flex;
   flex-direction: column;
   justify-content: space-between;

@@ -29,6 +29,9 @@ import SmartDeviceDetails from './components/SmartDeviceDetails.vue'
 import interact from 'interactjs'
 import SocketMock from 'socket.io-mock'
 
+import mockSmartDevices from './lib/mockSmartDevices'
+import mockDeviceByType from './lib/mockDeviceByType'
+
 export default {
   components: {
     SmartDevice,
@@ -44,7 +47,8 @@ export default {
       position: {
         x: 0,
         y: 0,
-      }
+      },
+      interactable: null
     }
   },
   methods: {
@@ -58,150 +62,85 @@ export default {
     },
     getDevices() {
       fetch('/api/v1/devices').then(_ => {
-        this.SmartDevices = [
-          {
-            type: 'bulb',
-            id: 'aaa',
-            name: 'Bright Ball',
-          },
-          {
-            type: 'bulb',
-            id: 'aab',
-            name: 'Bright Ball Two',
-          },
-          {
-            type: 'outlet',
-            id: 'abb',
-            name: 'Smart Socket',
-          },
-          {
-            type: 'temperatureSensor',
-            id: 'bbb',
-            name: 'Old Termometer',
-          },
-          {
-            type: 'bulb',
-            id: 'bbc',
-            name: 'Bright Ball Three',
-          },
-          {
-            type: 'temperatureSensor',
-            id: 'bcc',
-            name: 'New Termometer',
-          },
-          {
-            type: 'bulb',
-            id: 'ccc',
-            name: 'Bright Ball Four',
-          },
-          {
-            type: 'outlet',
-            id: 'ccd',
-            name: 'Smart Socket Two',
-          },
-          {
-            type: 'outlet',
-            id: 'cdd',
-            name: 'Smart Socket Three',
-          },
-          {
-            type: 'temperatureSensor',
-            id: 'ddd',
-            name: 'Another Termometer',
-          }
-        ]
-        this.SmartDevices.forEach(device => {
-          device.connectionState = this.randomDeviceConnectionState();
-        })
+        this.SmartDevices = mockSmartDevices()
       })
     },
     async getDeviceDetails(device) {
-      this.SmartDeviceDetails = await fetch(`/api/v1/devices/${device.id}`)
-        //Mocking response from backend
-        .then(function (_) {
-          if (device.type === 'bulb') {
-            return {
-              //SmartBulb
-              type: 'bulb',
-              id: device.id,
-              name: device.name,
-              connectionState: device.connectionState,
-              isTurnedOn: Math.ceil(Math.random() * 100) % 2 === 0,
-              brightness: Math.floor(Math.random() * 101),
-              color: "#a163f5"
-            }
-          }
-
-          if (device.type === 'outlet') {
-            return {
-              //SmartOutlet
-              type: 'outlet',
-              id: device.id,
-              name: device.name,
-              connectionState: device.connectionState,
-              isTurnedOn: Math.ceil(Math.random() * 100) % 2 === 0,
-              powerConsumption: Math.floor(Math.random() * 300), // in watts
-            }
-          }
-
-          if (device.type === 'temperatureSensor') {
-            return {
-              //SmartTemperatureSensor
-              type: 'temperatureSensor',
-              id: device.id,
-              name: device.name,
-              connectionState: device.connectionState,
-              temperature: Math.floor(Math.random() * 50) - 10 // in Celsius
-            }
-          }
-
-          else throw new Error('Unknown device type')
-        }).catch(e => {
-          alert("Error: " + e.message)
-        })
+      this.SmartDeviceDetails = await mockDeviceByType(device)
     },
     refresh() {
       this.getDevices()
       if (this.activeDevice) this.getDeviceDetails(this.activeDevice)
     },
-    randomDeviceConnectionState() {
-      return ['disconnected', 'poorConnection', 'connected'][Math.floor(Math.random() * 3)]
+    restrictToWindow() {
+      return interact.modifiers.restrictRect({
+        restriction: {
+          width: document.body.clientWidth, height: document.body.clientHeight
+        }
+      })
+    },
+    defineInteractable() {
+      const position = this.position;
+
+      this.interactable = interact('.smart-device-details').draggable({
+        modifiers: [this.restrictToWindow()],
+        listeners: {
+          move(event) {
+            position.x += event.dx
+            position.y += event.dy
+
+            event.target.style.transform =
+              `translate(${position.x}px, ${position.y}px)`
+          },
+        }
+      })
+
+      window.removeEventListener('load', this.defineInteractable)
+    },
+    recalculateRestict() {
+      console.log('aa')
+      this.interactable.draggable({
+        modifiers: [this.restrictToWindow()]
+      })
+    },
+    debounce(func, timeout = 300) {
+      let timer;
+      return () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+          func();
+        }, timeout);
+      };
     }
   },
   computed: {
-    restrictToWindow() {
-      return interact.modifiers.restrictRect({
-        restriction: { width: window.innerWidth, height: window.innerHeight }
-      })
+    debouncedRestrict() {
+      return this.debounce(this.recalculateRestict)
     }
   },
   created() {
     const io = new SocketMock() //io.('/api/v1/refresh')
     io.on('refresh', this.refresh)
 
+    window.onload = this.defineInteractable
+
     //Mock incoming MessageEvents from the server
-    setInterval(() => {
+    const refreshSocket = () => {
       io.socketClient.emit('refresh')
-    }, 15000)
+    }
+
+    setInterval(refreshSocket, 15000)
 
     //mock request for data
     this.getDevices()
-
-    const position = this.position;
-
-    interact('.smart-device-details').draggable({
-      modifiers: [this.restrictToWindow],
-      listeners: {
-        move(event) {
-          position.x += event.dx
-          position.y += event.dy
-
-          event.target.style.transform =
-            `translate(${position.x}px, ${position.y}px)`
-        },
-      }
-    })
-  }
+  },
+  mounted() {
+    window.addEventListener('resize', this.debouncedRestrict)
+  },
+  beforeUnmount() {
+    window.removeEventListener('resize', this.debouncedRestrict)
+    clearInterval(refreshSocket)
+  },
 }
 </script>
 
