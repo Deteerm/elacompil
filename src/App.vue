@@ -48,17 +48,20 @@ export default {
         x: 0,
         y: 0,
       },
-      interactable: null
+      interactable: null,
+      interval: null
     }
   },
   methods: {
-    async openDetials(payload) {
+    openDetials(payload) {
       const device = payload
 
       this.detailsActive = true
       this.activeDevice = device
       this.iconSrc = payload.iconSrc
       this.getDeviceDetails(device)
+
+      window.scrollTo(this.position.x, this.position.y)
     },
     getDevices() {
       fetch('/api/v1/devices').then(_ => {
@@ -88,7 +91,6 @@ export default {
           move(event) {
             position.x += event.dx
             position.y += event.dy
-
             event.target.style.transform =
               `translate(${position.x}px, ${position.y}px)`
           },
@@ -103,15 +105,18 @@ export default {
       })
 
       const details = document.querySelector('.smart-device-details')
-      const rect = details.getBoundingClientRect()
+      const rect = details?.getBoundingClientRect()
 
-      if (rect.right > window.innerWidth || rect.left > window.innerHeight) {
+      // reset position
+      if (rect && this.isRectOutsideOfViewport(rect)) {
         this.position.x = 0
         this.position.y = 0
         details.style.transform =
           `translate(${this.position.x}px, ${this.position.y}px)`
       }
-
+    },
+    isRectOutsideOfViewport(rect) {
+      return rect.right > window.innerWidth || rect.bototm > window.innerHeight
     },
     debounce(func, timeout = 300) {
       let timer;
@@ -139,7 +144,7 @@ export default {
       io.socketClient.emit('refresh')
     }
 
-    setInterval(refreshSocket, 15000)
+    this.interval = setInterval(refreshSocket, 15000)
 
     //mock request for data
     this.getDevices()
@@ -149,7 +154,7 @@ export default {
   },
   beforeUnmount() {
     window.removeEventListener('resize', this.debouncedRestrict)
-    clearInterval(refreshSocket)
+    clearInterval(this.interval)
   },
 }
 </script>
@@ -161,7 +166,6 @@ export default {
   max-width: 1280px;
   margin: 0 auto;
   padding: 2rem;
-
   font-weight: normal;
 }
 
